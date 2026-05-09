@@ -209,6 +209,16 @@ sudo setcap cap_net_raw,cap_net_admin+eip ./duplo-train-controller
 {"cmd": "forward"}
 ```
 
+### Test commands
+
+Broker assumed on `localhost`; add `-h <host>` and `-u/-P` if needed.
+
+```bash
+mosquitto_pub -t duplo/train/cmd -m forward      # boost / backward / stop
+mosquitto_pub -t duplo/train/led/set -m green    # see Subscribe table for colours
+mosquitto_sub -t 'duplo/train/#' -v              # watch all topics
+```
+
 ## Connection Behavior
 
 - BLE connection on first command (lazy connect)
