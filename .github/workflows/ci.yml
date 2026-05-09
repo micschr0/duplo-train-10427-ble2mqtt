@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build
+      - name: Unit tests
+        run: cargo test --bin duplo-train-controller
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy -- -D warnings
+
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # RUSTSEC-2025-0111: tokio-tar PAX header — test-only via testcontainers, no fix available
+          # RUSTSEC-2025-0134: rustls-pemfile unmaintained — test-only via bollard
+          ignore: RUSTSEC-2025-0111,RUSTSEC-2025-0134
