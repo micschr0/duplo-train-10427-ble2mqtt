@@ -40,6 +40,33 @@ with the result.
 > [Legoino](https://github.com/corneliusmunz/legoino) — details in
 > [FAQ → Which trains are supported?](./docs/FAQ.md#which-trains-are-supported).
 
+## Architecture
+
+```
+                                                                      ┌────────────┐
+                                                                      │ Zigbee     │
+                                                               Zigbee │ Remote     │
+                                                                      └─────┬──────┘
+                                                                            │
+                                                                            ▼
+┌─────────────┐      BLE       ┌─────────────────────┐      MQTT      ┌────────────────┐
+│ DUPLO Train │ <────────────> │ duplo-train-ctrl    │ <────────────> │ Home Assistant │
+│   (10427)   │                │ (Raspberry Pi)      │                │                │
+└─────────────┘                └─────────────────────┘                └────────┬───────┘
+                                                                            │
+                                                        ┌───────────────────┼───────────────────┐
+                                                        │                   │                   │
+                                                        ▼                   ▼                   ▼
+                                                 ┌────────────┐      ┌────────────┐      ┌────────────┐
+                                                 │ Zigbee     │      │ Smart      │      │ Media      │
+                                                 │ Lights     │      │ Speaker    │      │ Player     │
+                                                 │ (feedback) │      │ (TTS)      │      │ (sounds)   │
+                                                 └────────────┘      └────────────┘      └────────────┘
+```
+
+For the actor model, channels, and module layout see
+[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+
 ## Background
 
 This project exists because the **2025-generation DUPLO trains (10427, and
@@ -240,33 +267,6 @@ mqtt:
       state_topic: "duplo/train/state"
       value_template: "{{ value_json.status }}"
 ```
-
-## Architecture
-
-```
-                                                                      ┌────────────┐
-                                                                      │ Zigbee     │
-                                                               Zigbee │ Remote     │
-                                                                      └─────┬──────┘
-                                                                            │
-                                                                            ▼
-┌─────────────┐      BLE       ┌─────────────────────┐      MQTT      ┌────────────────┐
-│ DUPLO Train │ <────────────> │ duplo-train-ctrl    │ <────────────> │ Home Assistant │
-│   (10427)   │                │ (Raspberry Pi)      │                │                │
-└─────────────┘                └─────────────────────┘                └────────┬───────┘
-                                                                            │
-                                                        ┌───────────────────┼───────────────────┐
-                                                        │                   │                   │
-                                                        ▼                   ▼                   ▼
-                                                 ┌────────────┐      ┌────────────┐      ┌────────────┐
-                                                 │ Zigbee     │      │ Smart      │      │ Media      │
-                                                 │ Lights     │      │ Speaker    │      │ Player     │
-                                                 │ (feedback) │      │ (TTS)      │      │ (sounds)   │
-                                                 └────────────┘      └────────────┘      └────────────┘
-```
-
-For the actor model, channels, and module layout see
-[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
 ## Troubleshooting
 
