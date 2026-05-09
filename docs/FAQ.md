@@ -7,7 +7,7 @@ down. If you hit something that should live here, please open an issue.
 
 ### Which trains are supported?
 
-Tested on the **LEGO DUPLO 10427 Steam Train** with the original firmware. The
+Tested on the **LEGO DUPLO 10427 Interactive Adventure Train** with the original firmware. The
 LEGO Wireless Protocol 3.0 frames used here are the same family as on other
 recent DUPLO hubs, so newer DUPLO trains likely work too — but I haven't
 verified that.
