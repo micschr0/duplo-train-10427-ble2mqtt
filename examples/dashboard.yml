@@ -1,0 +1,265 @@
+type: sections
+title: DUPLO Zug
+max_columns: 4
+sections:
+
+  # ── Status Chips (volle Breite) ─────────────────────────────────────────
+  - type: grid
+    column_span: 4
+    cards:
+      - type: custom:mushroom-chips-card
+        alignment: center
+        chips:
+          - type: template
+            icon: >
+              {% set s = states('sensor.duplo_train_connection') %}
+              {% if s == 'connected' %}mdi:bluetooth-connect
+              {% elif s == 'connecting' %}mdi:bluetooth-search
+              {% else %}mdi:bluetooth-off{% endif %}
+            icon_color: >
+              {% set s = states('sensor.duplo_train_connection') %}
+              {% if s == 'connected' %}green
+              {% elif s == 'connecting' %}orange
+              {% else %}disabled{% endif %}
+            content: >
+              {% set s = states('sensor.duplo_train_connection') %}
+              {% if s == 'connected' %}Verbunden
+              {% elif s == 'connecting' %}Verbinde…
+              {% else %}Bereit{% endif %}
+            tap_action:
+              action: none
+            card_mod:
+              style: |
+                ha-card {
+                  --chip-font-size: 1rem;
+                  --chip-height: 44px;
+                }
+
+          - type: entity
+            entity: sensor.duplo_train_battery
+            content_info: state
+            card_mod:
+              style: |
+                ha-card {
+                  --chip-font-size: 1rem;
+                  --chip-height: 44px;
+                }
+
+          - type: template
+            icon: mdi:engine
+            content: >
+              {% set m = states('sensor.duplo_train_motor') %}
+              {{ m if m != 'unknown' else '–' }} %
+            tap_action:
+              action: none
+            card_mod:
+              style: |
+                ha-card {
+                  --chip-font-size: 1rem;
+                  --chip-height: 44px;
+                }
+
+          - type: template
+            icon: mdi:speedometer
+            content: >
+              {% set v = states('sensor.duplo_train_speed') %}
+              {{ v if v != 'unknown' else '–' }}
+            tap_action:
+              action: none
+            card_mod:
+              style: |
+                ha-card {
+                  --chip-font-size: 1rem;
+                  --chip-height: 44px;
+                }
+
+          - type: template
+            icon: mdi:play-circle-outline
+            icon_color: >
+              {% set cmd = states('sensor.duplo_train_last_command') %}
+              {% if cmd == 'forward' %}green
+              {% elif cmd == 'boost' %}blue
+              {% elif cmd == 'backward' %}amber
+              {% elif cmd == 'stop' %}red
+              {% else %}disabled{% endif %}
+            content: "{{ states('sensor.duplo_train_last_command') | default('–') }}"
+            tap_action:
+              action: none
+            card_mod:
+              style: |
+                ha-card {
+                  --chip-font-size: 1rem;
+                  --chip-height: 44px;
+                }
+
+  # ── Vorwärts ────────────────────────────────────────────────────────────
+  - type: grid
+    column_span: 1
+    cards:
+      - type: custom:mushroom-template-card
+        primary: Vorwärts
+        secondary: ""
+        icon: mdi:arrow-up-bold-circle
+        icon_color: green
+        fill_container: true
+        tap_action:
+          action: perform-action
+          perform_action: mqtt.publish
+          data:
+            topic: duplo/train/cmd
+            payload: forward
+        card_mod:
+          style:
+            mushroom-shape-icon$: |
+              .shape {
+                --shape-color: rgba(74, 222, 128, 0.2) !important;
+                --icon-size: 80px;
+                --icon-symbol-size: 48px;
+              }
+            mushroom-state-info$: |
+              .container {
+                --card-primary-font-size: 1.2rem;
+                align-items: center;
+              }
+            .: |
+              ha-card {
+                height: 160px !important;
+                border: 2px solid rgba(74, 222, 128, 0.4);
+              }
+              ha-card:active {
+                background-color: rgba(74, 222, 128, 0.15) !important;
+              }
+
+  # ── Boost ───────────────────────────────────────────────────────────────
+  - type: grid
+    column_span: 1
+    cards:
+      - type: custom:mushroom-template-card
+        primary: Boost
+        secondary: ""
+        icon: mdi:lightning-bolt-circle
+        icon_color: blue
+        fill_container: true
+        tap_action:
+          action: perform-action
+          perform_action: mqtt.publish
+          data:
+            topic: duplo/train/cmd
+            payload: boost
+        card_mod:
+          style:
+            mushroom-shape-icon$: |
+              .shape {
+                --shape-color: rgba(96, 165, 250, 0.2) !important;
+                --icon-size: 80px;
+                --icon-symbol-size: 48px;
+              }
+            mushroom-state-info$: |
+              .container {
+                --card-primary-font-size: 1.2rem;
+                align-items: center;
+              }
+            .: |
+              ha-card {
+                height: 160px !important;
+                border: 2px solid rgba(96, 165, 250, 0.4);
+              }
+              ha-card:active {
+                background-color: rgba(96, 165, 250, 0.15) !important;
+              }
+
+  # ── Rückwärts ───────────────────────────────────────────────────────────
+  - type: grid
+    column_span: 1
+    cards:
+      - type: custom:mushroom-template-card
+        primary: Rückwärts
+        secondary: ""
+        icon: mdi:arrow-down-bold-circle
+        icon_color: amber
+        fill_container: true
+        tap_action:
+          action: perform-action
+          perform_action: mqtt.publish
+          data:
+            topic: duplo/train/cmd
+            payload: backward
+        card_mod:
+          style:
+            mushroom-shape-icon$: |
+              .shape {
+                --shape-color: rgba(251, 191, 36, 0.2) !important;
+                --icon-size: 80px;
+                --icon-symbol-size: 48px;
+              }
+            mushroom-state-info$: |
+              .container {
+                --card-primary-font-size: 1.2rem;
+                align-items: center;
+              }
+            .: |
+              ha-card {
+                height: 160px !important;
+                border: 2px solid rgba(251, 191, 36, 0.4);
+              }
+              ha-card:active {
+                background-color: rgba(251, 191, 36, 0.15) !important;
+              }
+
+  # ── Stop ────────────────────────────────────────────────────────────────
+  - type: grid
+    column_span: 1
+    cards:
+      - type: custom:mushroom-template-card
+        primary: Stop
+        secondary: ""
+        icon: mdi:stop-circle
+        icon_color: red
+        fill_container: true
+        tap_action:
+          action: perform-action
+          perform_action: mqtt.publish
+          data:
+            topic: duplo/train/cmd
+            payload: stop
+        card_mod:
+          style:
+            mushroom-shape-icon$: |
+              .shape {
+                --shape-color: rgba(248, 113, 113, 0.2) !important;
+                --icon-size: 80px;
+                --icon-symbol-size: 48px;
+              }
+            mushroom-state-info$: |
+              .container {
+                --card-primary-font-size: 1.2rem;
+                align-items: center;
+              }
+            .: |
+              ha-card {
+                height: 160px !important;
+                border: 2px solid rgba(248, 113, 113, 0.4);
+              }
+              ha-card:active {
+                background-color: rgba(248, 113, 113, 0.15) !important;
+              }
+
+  # ── LED-Farbe ───────────────────────────────────────────────────────────
+  - type: grid
+    column_span: 2
+    cards:
+      - type: custom:mushroom-select-card
+        entity: select.duplo_train_led
+        name: LED-Farbe
+        icon: mdi:led-on
+        fill_container: true
+
+  # ── Sound ───────────────────────────────────────────────────────────────
+  - type: grid
+    column_span: 2
+    cards:
+      - type: custom:mushroom-select-card
+        entity: select.duplo_train_sound
+        name: Sound
+        icon: mdi:music
+        fill_container: true
