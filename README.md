@@ -21,7 +21,7 @@ I wrote this because the 2025-edition DUPLO hub (10427, and likely 10428) needs 
 ## Compatibility
 
 Tested with:
-- **Train:** LEGO DUPLO 10427 (Steam Train)
+- **Train:** LEGO DUPLO 10427 (Interactive Adventure Train)
 - **Host:** Raspberry Pi 4 (aarch64, 64-bit Raspberry Pi OS) and
   macOS (Apple Silicon) — both verified end-to-end against a real train.
 - **Bluetooth:** Built-in BLE on both platforms.
