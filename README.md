@@ -11,14 +11,14 @@ BLE-to-MQTT bridge for LEGO DUPLO 10427 train. Enables Home Assistant integratio
 
 This service runs on a Raspberry Pi 4 and bridges the LEGO DUPLO train's Bluetooth LE interface to MQTT. Combined with Home Assistant, this allows controlling the train using Zigbee buttons, switches, or any other Home Assistant events.
 
-**Use case:** My kid can press a Zigbee remote with 4 coloured buttons to start/stop the train. Home Assistant bridges the button events to MQTT commands and reactions:
+**Use case:** My kid can press a Zigbee remote with 4 coloured buttons to start/stop the train. Home Assistant bridges the button events to MQTT commands and runs these reactions:
 - **Visual feedback:** Lamps briefly flash in different colors to confirm commands (green = forward, red = stop, etc.)
 - **Mode indication:** A lamp changes color to show current train mode
-- **Light scenes:** Home Assistant triggers richer effects on selected events — e.g., a coordinated colour sweep across the room when the train enters boost mode
-- **Boost sound:** When boost kicks in, a smart speaker plays a sound effect through the room
+- **Light scenes:** Home Assistant runs light sequences — e.g., a coordinated colour sweep across the room when the train enters boost mode
+- **Boost sound:** When boost kicks in, a smart speaker plays a sound effect
 - **TTS announcements:** Speakers give voice hints when the train needs to be turned on/off (e.g., "Please wake up the train" after connection timeout)
 
-With Home Assistant sitting in the middle, anything it can react to or control plugs into this flow — buttons are just one trigger, lamps and speakers just two reactions.
+With Home Assistant in the middle, anything it can react to or control plugs into this flow — buttons are just one trigger, lamps and speakers just two reactions.
 
 I wrote this because the 2025-edition DUPLO hub (10427, and likely 10428) needs BLE bonding before it accepts any command — and existing LEGO libraries don't bond. See [Background](#background) for how I tracked that down.
 
