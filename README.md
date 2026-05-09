@@ -11,19 +11,98 @@ BLE-to-MQTT bridge for LEGO DUPLO 10427 train. Enables Home Assistant integratio
 
 This service runs on a Raspberry Pi 4 and bridges the LEGO DUPLO train's Bluetooth LE interface to MQTT. Combined with Home Assistant, this allows controlling the train using Zigbee buttons, switches, or any other Home Assistant events.
 
-**Use case:** My kid can press a Zigbee remote with 4 coloured buttons to start/stop the train. Home Assistant bridges the button events to MQTT commands and provides feedback:
+**Use case:** My kid can press a Zigbee remote with 4 coloured buttons to start/stop the train. Home Assistant bridges the button events to MQTT commands and runs these reactions:
 - **Visual feedback:** Lamps briefly flash in different colors to confirm commands (green = forward, red = stop, etc.)
 - **Mode indication:** A lamp changes color to show current train mode
+- **Light scenes:** Home Assistant runs light sequences — e.g., a coordinated colour sweep across the room when the train enters boost mode
+- **Boost sound:** When boost kicks in, a smart speaker plays a sound effect
 - **TTS announcements:** Speakers give voice hints when the train needs to be turned on/off (e.g., "Please wake up the train" after connection timeout)
+
+With Home Assistant in the middle, anything it can react to or control plugs into this flow — buttons are just one trigger, lamps and speakers just two reactions.
+
+I wrote this because the 2025-edition DUPLO hub (10427, and likely 10428) needs BLE bonding before it accepts any command — and existing LEGO libraries don't bond. See [Background](#background) for how I tracked that down.
 
 ## Compatibility
 
 Tested with:
-- **Train:** LEGO DUPLO 10427 (Steam Train)
-- **Host:** Raspberry Pi 4 (aarch64), macOS (Apple Silicon)
-- **Bluetooth:** Built-in BLE on both platforms
+- **Train:** LEGO DUPLO 10427 (Interactive Adventure Train)
+- **Host:** Raspberry Pi 4 (aarch64, 64-bit Raspberry Pi OS) and
+  macOS (Apple Silicon) — both verified end-to-end against a real train.
+- **Bluetooth:** Built-in BLE on both platforms.
 
-May also work with other new generation DUPLO trains.
+Other recent DUPLO trains likely work as well. In particular, the
+**LEGO DUPLO 10428 (Cargo Train)** uses the same LEGO Wireless Protocol 3
+(LWP3) hub family based on community research, so it should be a drop-in. **I have
+not verified this myself** — if you try it, please report back via an issue
+with the result.
+
+> **Older DUPLO trains (10874, 10875) need a different library** like
+> [Legoino](https://github.com/corneliusmunz/legoino) — details in
+> [FAQ → Which trains are supported?](./docs/FAQ.md#which-trains-are-supported).
+
+## Architecture
+
+```
+                                                                      ┌────────────┐
+                                                                      │ Zigbee     │
+                                                               Zigbee │ Remote     │
+                                                                      └─────┬──────┘
+                                                                            │
+                                                                            ▼
+┌─────────────┐      BLE       ┌─────────────────────┐      MQTT      ┌────────────────┐
+│ DUPLO Train │ <────────────> │ duplo-train-ctrl    │ <────────────> │ Home Assistant │
+│   (10427)   │                │ (Raspberry Pi)      │                │                │
+└─────────────┘                └─────────────────────┘                └────────┬───────┘
+                                                                            │
+                                                        ┌───────────────────┼───────────────────┐
+                                                        │                   │                   │
+                                                        ▼                   ▼                   ▼
+                                                 ┌────────────┐      ┌────────────┐      ┌────────────┐
+                                                 │ Zigbee     │      │ Smart      │      │ Media      │
+                                                 │ Lights     │      │ Speaker    │      │ Player     │
+                                                 │ (feedback) │      │ (TTS)      │      │ (sounds)   │
+                                                 └────────────┘      └────────────┘      └────────────┘
+```
+
+For the actor model, channels, and module layout see
+[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+
+## Background
+
+This project exists because the **2025-generation DUPLO trains (10427, and
+likely 10428) cannot be controlled by any of the established LEGO BLE
+libraries.** I burned a fair amount of time finding this out the hard way.
+
+### What changed in the 2025 hub
+
+The 2025 train hub uses a new **TI CC2642R** BLE controller and **requires
+BLE bonding** (LE pairing with persistent keys) before it will accept any
+LWP3 command. The older 10874 / 10875 hubs did not.
+
+Existing libraries — [Legoino](https://github.com/corneliusmunz/legoino),
+node-poweredup, BrickController2, and similar — target the older hubs and
+**skip bonding**. Against a 2025 train this produces a confusing failure
+mode: BLE connects, the LWP3 frames write without errors, and the train
+**silently ignores every command**. No error, no notification — just a
+connected hub doing nothing.
+
+The bonding requirement was identified by the community here:
+
+- Legoino issue #90 — <https://github.com/corneliusmunz/legoino/issues/90>
+- Brick StackExchange reverse-engineering — <https://bricks.stackexchange.com/questions/18907/functionality-of-new-purple-orange-and-green-duplo-train-action-bricks/18975#18975>
+
+### How this project handles it
+
+The bridge uses [`btleplug`](https://github.com/deviceplug/btleplug) to talk
+to the platform BLE stack — **BlueZ** on Linux and **CoreBluetooth** on
+macOS — and lets the OS perform the pairing/bonding the hub demands. Once
+bonded, the LWP3 motor / LED / sound / speedometer frames documented in
+[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) work as expected.
+
+If you are working on an ESP32-based controller for the same hub, the same
+"bond first, then write LWP3" approach applies — it just has to be done with
+a BLE stack that exposes bonding, e.g. NimBLE rather than the libraries that
+target the older hubs.
 
 ## Requirements
 
@@ -42,6 +121,18 @@ Cross-compilation for Raspberry Pi 4:
 ```bash
 ./scripts/build-rpi4.sh
 ```
+
+## Verify locally
+
+```bash
+cargo fmt --check
+cargo clippy -- -D warnings
+cargo test --bin duplo-train-controller   # unit tests, no Docker needed
+cargo test                                # full suite, requires Docker
+```
+
+The full suite spins up a real Mosquitto broker via `testcontainers`. CI runs
+the unit-only target.
 
 ## Configuration
 
@@ -118,6 +209,16 @@ sudo setcap cap_net_raw,cap_net_admin+eip ./duplo-train-controller
 {"cmd": "forward"}
 ```
 
+### Test commands
+
+Broker assumed on `localhost`; add `-h <host>` and `-u/-P` if needed.
+
+```bash
+mosquitto_pub -t duplo/train/cmd -m forward      # boost / backward / stop
+mosquitto_pub -t duplo/train/led/set -m green    # see Subscribe table for colours
+mosquitto_sub -t 'duplo/train/#' -v              # watch all topics
+```
+
 ## Connection Behavior
 
 - BLE connection on first command (lazy connect)
@@ -177,50 +278,24 @@ mqtt:
       value_template: "{{ value_json.status }}"
 ```
 
-## Architecture
-
-```
-                                                                      ┌────────────┐
-                                                                      │ Zigbee     │
-                                                               Zigbee │ Remote     │
-                                                                      └─────┬──────┘
-                                                                            │
-                                                                            ▼
-┌─────────────┐      BLE       ┌─────────────────────┐      MQTT      ┌────────────────┐
-│ DUPLO Train │ <────────────> │ duplo-train-ctrl    │ <────────────> │ Home Assistant │
-│   (10427)   │                │ (Raspberry Pi)      │                │                │
-└─────────────┘                └─────────────────────┘                └────────┬───────┘
-                                                                            │
-                                                        ┌───────────────────┼───────────────────┐
-                                                        │                   │                   │
-                                                        ▼                   ▼                   ▼
-                                                 ┌────────────┐      ┌────────────┐      ┌────────────┐
-                                                 │ Zigbee     │      │ Smart      │      │ Media      │
-                                                 │ Lights     │      │ Speaker    │      │ Player     │
-                                                 │ (feedback) │      │ (TTS)      │      │ (sounds)   │
-                                                 └────────────┘      └────────────┘      └────────────┘
-```
-
 ## Troubleshooting
 
-**Train not found:**
-- Make sure the train is awake (press button on train)
-- Check if Bluetooth is enabled: `bluetoothctl show`
-- Try manual scan: `bluetoothctl scan on`
+Quick checks: train awake, BLE up (`bluetoothctl show`), capabilities applied
+(`sudo setcap cap_net_raw,cap_net_admin+eip ./duplo-train-controller`).
 
-**Connection fails on Linux:**
-- Set BLE capabilities: `sudo setcap cap_net_raw,cap_net_admin+eip ./duplo-train-controller`
-- Try if it will run as root: `sudo ./duplo-train-controller`
-- Clear BlueZ cache: `sudo rm -rf /var/lib/bluetooth/*/cache/*`
+For the longer list — connection failures, missing speed readings, Docker /
+testcontainers errors, cross-compile linker issues — see
+[`docs/FAQ.md`](./docs/FAQ.md).
 
-**Commands sent but train doesn't move:**
-- Check if notifications are received (look for "Device attached" in logs)
-- Restart Bluetooth: `sudo systemctl restart bluetooth`
+## Documentation
 
-**Integration tests fail:**
-- Integration tests use `testcontainers` and require Docker to be running
-- Run `docker info` to check if Docker is available
-- Unit tests work without Docker: `cargo test --lib`
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — actor model, channels, module map.
+- [`docs/FAQ.md`](./docs/FAQ.md) — setup, runtime, and development questions.
+- [`HOMEASSISTANT.md`](./HOMEASSISTANT.md) — Home Assistant sensors, automations, dashboard.
+- [`scripts/README.md`](./scripts/README.md) — Raspberry Pi 4 cross-compile and `systemd` deploy.
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — dev setup, tests, PR style.
+- [`SECURITY.md`](./SECURITY.md) — how to report a vulnerability.
+- [`CHANGELOG.md`](./CHANGELOG.md) — release notes.
 
 ## TODO
 
@@ -228,4 +303,4 @@ mqtt:
 
 ## License
 
-MIT
+[MIT](./LICENSE)
