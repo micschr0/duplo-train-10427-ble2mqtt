@@ -9,7 +9,7 @@ BLE-to-MQTT bridge for LEGO DUPLO 10427 train. Enables Home Assistant integratio
 
 ## About
 
-This service runs on a Raspberry Pi 4 and bridges the LEGO DUPLO train's Bluetooth LE interface to MQTT. Combined with Home Assistant, this allows controlling the train using Zigbee buttons, switches, or any other Home Assistant events.
+This service runs on a Raspberry Pi 4 and bridges the LEGO DUPLO train's Bluetooth LE interface to MQTT. Combined with Home Assistant, this lets you control the train with Zigbee buttons, switches, or any other Home Assistant events.
 
 **Use case:** My kid can press a Zigbee remote with 4 coloured buttons to start/stop the train. Home Assistant bridges the button events to MQTT commands and runs these reactions:
 - **Visual feedback:** Lamps briefly flash in different colors to confirm commands (green = forward, red = stop, etc.)
@@ -64,14 +64,14 @@ with the result.
                                                  └────────────┘      └────────────┘      └────────────┘
 ```
 
-For the actor model, channels, and module layout see
+For the actor model, channels, and module layout, see
 [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
 ## Background
 
 This project exists because the **2025-generation DUPLO trains (10427, and
 likely 10428) cannot be controlled by any of the established LEGO BLE
-libraries.** I burned a fair amount of time finding this out the hard way.
+libraries.** I burned considerable time finding this out the hard way.
 
 ### What changed in the 2025 hub
 
@@ -81,12 +81,12 @@ LWP3 command. The older 10874 / 10875 hubs did not.
 
 Existing libraries — [Legoino](https://github.com/corneliusmunz/legoino),
 node-poweredup, BrickController2, and similar — target the older hubs and
-**skip bonding**. Against a 2025 train this produces a confusing failure
+**skip bonding**. Against a 2025 train, this produces a confusing failure
 mode: BLE connects, the LWP3 frames write without errors, and the train
 **silently ignores every command**. No error, no notification — just a
 connected hub doing nothing.
 
-The bonding requirement was identified by the community here:
+The community identified the bonding requirement here:
 
 - Legoino issue #90 — <https://github.com/corneliusmunz/legoino/issues/90>
 - Brick StackExchange reverse-engineering — <https://bricks.stackexchange.com/questions/18907/functionality-of-new-purple-orange-and-green-duplo-train-action-bricks/18975#18975>
@@ -221,10 +221,7 @@ mosquitto_sub -t 'duplo/train/#' -v              # watch all topics
 
 ## Connection Behavior
 
-- BLE connection on first command (lazy connect)
-- Auto-disconnect after 5 min idle (saves train battery)
-- 3 connection attempts, then 25s cooldown
-- 120s timeout while connecting
+See [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for the BLE state machine and timing details.
 
 ## Optional: Home Assistant Integration
 
@@ -293,9 +290,6 @@ testcontainers errors, cross-compile linker issues — see
 - [`docs/FAQ.md`](./docs/FAQ.md) — setup, runtime, and development questions.
 - [`HOMEASSISTANT.md`](./HOMEASSISTANT.md) — Home Assistant sensors, automations, dashboard.
 - [`scripts/README.md`](./scripts/README.md) — Raspberry Pi 4 cross-compile and `systemd` deploy.
-- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — dev setup, tests, PR style.
-- [`SECURITY.md`](./SECURITY.md) — how to report a vulnerability.
-- [`CHANGELOG.md`](./CHANGELOG.md) — release notes.
 
 ## TODO
 

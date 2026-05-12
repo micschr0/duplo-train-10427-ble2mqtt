@@ -64,7 +64,7 @@ State machine: `Standby` → `Connecting` → `Connected` and back.
 - Periodic ping every **10 seconds** while connected.
 - The actor forwards the notification stream into a bounded `mpsc`, where
   `MessageBuffer` reassembles and parses it into `ParsedMessage` variants.
-- Status updates are best-effort — a closed `status_tx` warns and the loop
+- Status updates are best-effort — a closed `status_tx` logs a warning; the loop
   exits on its next `cmd_rx` poll.
 
 Boost can optionally auto-revert to `Forward` after `MOTOR_BOOST_DURATION`
@@ -81,29 +81,16 @@ seconds; the actor tracks `boost_expires` and races a timer in its `select!`.
 - Transient `event_loop.poll()` errors trigger a 5 s backoff while the actor
   continues draining `status_rx` so the BLE actor never blocks on MQTT
   hiccups.
-- The actor holds `TrainState`; updates merge in (battery, LED, last sound
-  survive standby/connect transitions). It republishes the full state to
+- The actor holds `TrainState`; updates merge in — battery, LED, and last sound
+  survive standby/connect transitions. It republishes the full state to
   `<base>/state` (retained) on every change.
 
 ## Supervision
 
-`main` joins both actors via `tokio::select!`. If either task returns the
+`main` joins both actors via `tokio::select!`. If either task returns, the
 process exits with the captured error; there is no in-process restart loop.
 Production deployments rely on `systemd` (`Restart=always`) — see
 [`scripts/README.md`](../scripts/README.md) for the unit file template.
-
-## Platform notes
-
-I've verified two host platforms end-to-end against a real DUPLO 10427:
-
-- **Raspberry Pi 4 (aarch64, 64-bit Raspberry Pi OS).** `btleplug` uses
-  BlueZ over D-Bus. The release binary needs `cap_net_raw,cap_net_admin+eip`
-  after every rebuild so it can talk to the BLE adapter without `sudo`.
-- **macOS (Apple Silicon).** `btleplug` uses CoreBluetooth. No setcap step;
-  macOS prompts for Bluetooth permission on first run.
-
-Neither platform requires special handling at the actor layer —
-`btleplug::platform` encapsulates the BLE adapter difference.
 
 ## What this design deliberately doesn't do
 

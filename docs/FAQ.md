@@ -9,12 +9,12 @@ down. If you hit something that should live here, please open an issue.
 
 Tested on the **LEGO DUPLO 10427 Interactive Adventure Train**. The
 LEGO Wireless Protocol 3.0 frames used here are the same family as on other
-recent DUPLO hubs, so newer DUPLO trains likely work too — but I haven't
-verified that.
+recent DUPLO hubs, so newer DUPLO trains likely work — but I haven't
+verified it.
 
 In particular, the **LEGO DUPLO 10428 (Cargo Train)** reportedly uses the
 same LWP3 hub family, so the bridge should work with it without code changes.
-I haven't personally tested it. If you try the 10428 (or any other DUPLO
+I haven't tested it. If you try the 10428 (or any other DUPLO
 train), please file an issue with the result either way — I'll update this
 list.
 
@@ -35,7 +35,7 @@ I've verified two host platforms end-to-end against a real DUPLO 10427 hub:
   no extra setcap / capability dance is required; on first launch macOS will
   prompt for Bluetooth permission for the binary.
 
-Any other Linux host with a working BLE stack and `bluetoothd` should also
+Any other Linux host with a working BLE stack and `bluetoothd` should
 work; I haven't tested it. Windows is untested.
 
 ### Why does it need MQTT?
@@ -60,8 +60,7 @@ bluetoothctl show
 sudo setcap cap_net_raw,cap_net_admin+eip ./duplo-train-controller
 ```
 
-If `setcap` was applied, the executable has been rebuilt, and capabilities are
-gone again — that is expected. Re-run `setcap` after every release build.
+Capabilities do not survive a rebuild — re-run `setcap` after every release build.
 
 ### The train is not found during scan
 
@@ -95,17 +94,16 @@ lazily on demand.
 
 Two common causes:
 
-1. The bridge is connected to the broker but lost it after the initial
-   `online` publish — Last-Will pushed `offline` to the retained topic. Check
-   broker logs and network connectivity, then restart the bridge.
-2. The retained `offline` from a previous run is being read by Home Assistant
-   on cold start. Restart the bridge once and a fresh `online` will replace
-   it.
+1. The bridge connected but lost the broker after the initial `online` publish
+   — Last-Will pushed `offline` to the retained topic. Check broker logs and
+   network connectivity, then restart the bridge.
+2. Home Assistant read a stale retained `offline` on cold start. Restart the
+   bridge once and a fresh `online` will replace it.
 
 ### Speed reads zero forever
 
 The speedometer port id differs between hub revisions; both `0x36` and `0x33`
-are recognized. If your hub uses something else the speedometer subscribe
+are recognized. If your hub uses something else, the speedometer subscribe
 will succeed but no values will arrive. Open an issue with a `RUST_LOG=debug`
 log of the connection — the `IoEvent::Attached` line will show the port id
 the hub announces.
@@ -115,8 +113,7 @@ the hub announces.
 ### Tests fail with "Cannot connect to the Docker daemon"
 
 The full suite includes integration tests that boot a Mosquitto container via
-[`testcontainers`](https://docs.rs/testcontainers). If you do not have Docker
-running, run the unit suite only:
+[`testcontainers`](https://docs.rs/testcontainers). Without Docker, run the unit suite only:
 
 ```bash
 cargo test --bin duplo-train-controller
@@ -128,8 +125,7 @@ CI uses the same target so PRs do not need Docker either.
 
 The `./scripts/build-rpi4.sh` helper requires
 [`cross`](https://github.com/cross-rs/cross) and a working Docker daemon —
-`cross` invokes a Linux container with the right toolchain, so building it
-without Docker will not work. Install `cross` with:
+`cross` invokes a Linux container with the right toolchain, so building without Docker fails. Install `cross` with:
 
 ```bash
 cargo install cross --git https://github.com/cross-rs/cross
@@ -140,15 +136,14 @@ cargo install cross --git https://github.com/cross-rs/cross
 `RUSTSEC-2025-0111` (`tokio-tar`) and `RUSTSEC-2025-0134` (`rustls-pemfile`)
 both come in via `testcontainers` and only affect the test binary, not the
 released crate. They are explicitly ignored in the CI workflow with a comment
-linking back to the upstream status. If a fix becomes available the ignore
-should be removed.
+linking back to the upstream status. Remove the ignore when a fix becomes available.
 
 ### Can I add support for sound X / LED color Y / behaviour Z?
 
 Probably yes if the train firmware exposes it — see
 [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) for where commands are encoded
 (`src/protocol/commands.rs`) and parsed (`src/protocol/messages.rs`). Open an
-issue first so the scope is agreed before you start writing code.
+issue first to agree on scope before writing code.
 
 ## Project status
 
@@ -156,4 +151,4 @@ issue first so the scope is agreed before you start writing code.
 
 No. This is a hobby project I wrote to control my kid's DUPLO train and to
 learn Rust. Expect commits to be sporadic. Issues and PRs are welcome —
-keep the scope modest, see [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+keep the scope modest.
