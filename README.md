@@ -77,30 +77,16 @@ libraries.** I burned considerable time finding this out the hard way.
 
 ### What changed in the 2025 hub
 
-The 2025 train hub uses a new **TI CC2642R** BLE controller and **requires
-BLE bonding** (LE pairing with persistent keys) before it will accept any
-LWP3 command. The older 10874 / 10875 hubs did not.
-
-jncraton's [hardware teardown on Bricks Stack Exchange](https://bricks.stackexchange.com/questions/19118/what-are-the-technical-differences-between-the-2018-and-2025-duplo-train-bases)
-identified the CC2642R and is the source of the chipset information used here:
-
-> The primary MCU has been upgraded from a TI CC2640 to a TI CC2642R in the
-> 2025 part. Both MCUs are similar, providing 32-bit ARM cores running at
-> 48MHz. Bluetooth is also provided by this chip upgrading the supported
-> version from 4.2 in the 2018 part to 5.2 in the 2025 part.
->
-> ![2018 vs 2025 DUPLO train base — exterior colour comparison](https://i.sstatic.net/V0e0Q8mt.png)
->
-> ![2018 vs 2025 DUPLO train base — internal drive mechanism and PCB](https://i.sstatic.net/XX7SFQcg.png)
+The 2025 train hub uses a new [BLE controller](https://bricks.stackexchange.com/questions/19118/what-are-the-technical-differences-between-the-2018-and-2025-duplo-train-bases) and **requires
+BLE bonding** before it will accept any command. 
+The older 10874 / 10875 hubs did not.
 
 Existing libraries — [Legoino](https://github.com/corneliusmunz/legoino),
 node-poweredup, BrickController2, and similar — target the older hubs and
 **skip bonding**. Against a 2025 train, this produces a confusing failure
 mode: BLE connects, the LWP3 frames write without errors, and the train
 **silently ignores every command**. No error, no notification — just a
-connected hub doing nothing.
-
-The community identified the bonding requirement here:
+connected hub doing nothing. See:
 
 - Legoino issue #90 — <https://github.com/corneliusmunz/legoino/issues/90>
 - Brick StackExchange reverse-engineering — <https://bricks.stackexchange.com/questions/18907/functionality-of-new-purple-orange-and-green-duplo-train-action-bricks/18975#18975>
