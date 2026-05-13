@@ -5,13 +5,17 @@
 
 BLE-to-MQTT bridge for LEGO DUPLO 10427 train. Enables Home Assistant integration via MQTT.
 
-> **Disclaimer:** This is my first venture into Rust. It was also an experiment to see how a coding agent like Claude Code works in practice.
+> This is my first venture into Rust. It was also an experiment to see how a coding agent like Claude Code works in practice.
 
 ## About
 
 This service runs on a Raspberry Pi 4 and bridges the LEGO DUPLO train's Bluetooth LE interface to MQTT. Combined with Home Assistant, this lets you control the train with Zigbee buttons, switches, or any other Home Assistant events.
 
-**Use case:** My kid can press a Zigbee remote with 4 coloured buttons to start/stop the train. Home Assistant bridges the button events to MQTT commands and runs these reactions:
+This project came about because none of the established LEGO BLE libraries work with current DUPLO train models (the 2025 generation) — see [Background](#background) for details.
+
+## Use Case
+
+My kid can press a Zigbee remote with 4 coloured buttons to start/stop the train. Home Assistant bridges the button events to MQTT commands and runs these reactions:
 - **Visual feedback:** Lamps briefly flash in different colors to confirm commands (green = forward, red = stop, etc.)
 - **Mode indication:** A lamp changes color to show current train mode
 - **Light scenes:** Home Assistant runs light sequences — e.g., a coordinated colour sweep across the room when the train enters boost mode
@@ -19,8 +23,6 @@ This service runs on a Raspberry Pi 4 and bridges the LEGO DUPLO train's Bluetoo
 - **TTS announcements:** Speakers give voice hints when the train needs to be turned on/off (e.g., "Please wake up the train" after connection timeout)
 
 With Home Assistant in the middle, anything it can react to or control plugs into this flow — buttons are just one trigger, lamps and speakers just two reactions.
-
-I wrote this because the 2025-edition DUPLO hub (10427, and likely 10428) needs BLE bonding before it accepts any command — and existing LEGO libraries don't bond. See [Background](#background) for how I tracked that down.
 
 ## Compatibility
 
@@ -78,6 +80,18 @@ libraries.** I burned considerable time finding this out the hard way.
 The 2025 train hub uses a new **TI CC2642R** BLE controller and **requires
 BLE bonding** (LE pairing with persistent keys) before it will accept any
 LWP3 command. The older 10874 / 10875 hubs did not.
+
+jncraton's [hardware teardown on Bricks Stack Exchange](https://bricks.stackexchange.com/questions/19118/what-are-the-technical-differences-between-the-2018-and-2025-duplo-train-bases)
+identified the CC2642R and is the source of the chipset information used here:
+
+> The primary MCU has been upgraded from a TI CC2640 to a TI CC2642R in the
+> 2025 part. Both MCUs are similar, providing 32-bit ARM cores running at
+> 48MHz. Bluetooth is also provided by this chip upgrading the supported
+> version from 4.2 in the 2018 part to 5.2 in the 2025 part.
+>
+> ![2018 vs 2025 DUPLO train base — exterior colour comparison](https://i.sstatic.net/V0e0Q8mt.png)
+>
+> ![2018 vs 2025 DUPLO train base — internal drive mechanism and PCB](https://i.sstatic.net/XX7SFQcg.png)
 
 Existing libraries — [Legoino](https://github.com/corneliusmunz/legoino),
 node-poweredup, BrickController2, and similar — target the older hubs and
@@ -169,33 +183,40 @@ sudo setcap cap_net_raw,cap_net_admin+eip ./duplo-train-controller
 
 ## MQTT Interface
 
-### Subscribe
+### Commands (subscribe)
 
-| Topic | Payload | Description |
-|-------|---------|-------------|
-| `duplo/train/cmd` | `forward` | Drive forward |
-| | `boost` | Drive forward fast |
-| | `backward` | Horn + reverse |
-| | `stop` | Stop motor |
-| `duplo/train/led/set` | `off`, `white`, `green`, `yellow`, `light_blue`, `dark_blue`, `purple`, `purple_pink`, `light_pink`, `red_pink`, `red` | Set hub LED color |
-| `duplo/train/sound/set` | `horn`, `brake`, `steam`, `station_departure`, `water_refill` | Play train sound |
+**`duplo/train/cmd`**
 
-### Publish
+| Payload | Effect |
+|---------|--------|
+| `forward` | Drive forward |
+| `boost` | Drive forward fast |
+| `backward` | Horn + reverse |
+| `stop` | Stop motor |
 
-**Availability** (`duplo/train/availability`, retained):
-| Payload | Description |
-|---------|-------------|
-| `online` | Service connected to MQTT broker |
-| `offline` | Service disconnected (via LWT) |
+**`duplo/train/led/set`** — Set hub LED colour
 
-**State** (`duplo/train/state`, retained):
+`off` · `white` · `green` · `yellow` · `light_blue` · `dark_blue` · `purple` · `purple_pink` · `light_pink` · `red_pink` · `red`
+
+**`duplo/train/sound/set`** — Play train sound
+
+`horn` · `brake` · `steam` · `station_departure` · `water_refill`
+
+### Status (publish)
+
+**`duplo/train/availability`** _(retained)_
+
+`online` when connected · `offline` via Last Will
+
+**`duplo/train/state`** _(retained, JSON)_
+
 ```json
 {
   "status": "standby|connecting|connected",
-  "attempts": 0,
   "battery": 85,
   "motor": 50,
   "speed": 42,
+  "attempts": 0,
   "ts": 1234567890
 }
 ```
@@ -204,18 +225,19 @@ sudo setcap cap_net_raw,cap_net_admin+eip ./duplo-train-controller
 - `motor`: Commanded speed (-100 to 100)
 - `speed`: Measured speed from speedometer (only when connected)
 
-**Executed** (`duplo/train/executed`, not retained):
+**`duplo/train/executed`** _(not retained)_
+
 ```json
 {"cmd": "forward"}
 ```
 
-### Test commands
+### Test
 
 Broker assumed on `localhost`; add `-h <host>` and `-u/-P` if needed.
 
 ```bash
 mosquitto_pub -t duplo/train/cmd -m forward      # boost / backward / stop
-mosquitto_pub -t duplo/train/led/set -m green    # see Subscribe table for colours
+mosquitto_pub -t duplo/train/led/set -m green    # see colours above
 mosquitto_sub -t 'duplo/train/#' -v              # watch all topics
 ```
 
