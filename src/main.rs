@@ -31,6 +31,7 @@ async fn main() -> Result<()> {
 
     info!(
         version = env!("CARGO_PKG_VERSION"),
+        build = env!("GIT_DESCRIBE"),
         "Starting DUPLO Train Gateway"
     );
 
