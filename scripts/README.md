@@ -81,3 +81,5 @@ sudo systemctl start duplo-train
 # View logs
 journalctl -u duplo-train -f
 ```
+
+For a hardened production systemd service, see [`../deploy/`](../deploy/README.md).
