@@ -7,7 +7,7 @@ license = "MIT"
 authors = ["Michael Schroeder"]
 repository = "https://github.com/micschr0/duplo-train-10427-ble2mqtt"
 readme = "README.md"
-rust-version = "1.85"
+rust-version = "1.88"
 keywords = ["lego", "duplo", "ble", "mqtt", "home-assistant"]
 categories = ["embedded", "hardware-support"]
 
