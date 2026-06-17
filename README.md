@@ -202,6 +202,8 @@ sudo setcap cap_net_raw,cap_net_admin+eip ./duplo-train-controller
   "battery": 85,
   "motor": 50,
   "speed": 42,
+  "led": "green",
+  "last_sound": "horn",
   "attempts": 0,
   "ts": 1234567890
 }
@@ -210,6 +212,11 @@ sudo setcap cap_net_raw,cap_net_admin+eip ./duplo-train-controller
 - `status`: `standby` (waiting for command), `connecting` (BLE scan), `connected` (BLE active)
 - `motor`: Commanded speed (-100 to 100)
 - `speed`: Measured speed from speedometer (only when connected)
+- `led`: Last LED colour set (snake_case, e.g. `green`); present only after a colour has been set
+- `last_sound`: Last sound played (e.g. `horn`); present only after a sound has been triggered
+- `attempts`: Connection-retry counter (0–3), surfaced for Home Assistant feedback
+
+Optional fields (`battery`, `motor`, `speed`, `led`, `last_sound`) are omitted from the JSON until they have a value.
 
 **`duplo/train/executed`** _(not retained)_
 
