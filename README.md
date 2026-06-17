@@ -106,7 +106,7 @@ target the older hubs.
 
 ## Requirements
 
-- Rust 1.85+
+- Rust 1.88+
 - Bluetooth LE adapter
 - MQTT broker (e.g., Mosquitto)
 - Home Assistant (for bridging events to commands)
