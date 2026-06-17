@@ -15,4 +15,7 @@ PKG_CONFIG_SYSROOT_DIR = "/"
 [build.env]
 passthrough = [
     "RUST_LOG",
+    # Build id computed on the host by scripts/build-rpi4.sh and read by
+    # build.rs (the cross container has no git / tags of its own).
+    "GIT_DESCRIBE",
 ]
