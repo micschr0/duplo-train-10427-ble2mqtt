@@ -20,6 +20,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo build
+      - name: Build (release)
+        run: cargo build --release
       - name: Unit tests
         run: cargo test --bin duplo-train-controller
 
@@ -48,3 +50,15 @@ jobs:
           # RUSTSEC-2025-0111: tokio-tar PAX header — test-only via testcontainers, no fix available
           # RUSTSEC-2025-0134: rustls-pemfile unmaintained — test-only via bollard
           ignore: RUSTSEC-2025-0111,RUSTSEC-2025-0134
+
+  msrv:
+    name: MSRV
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install BLE/D-Bus system deps
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libdbus-1-dev pkg-config
+      - uses: dtolnay/rust-toolchain@1.85
+      - uses: Swatinem/rust-cache@v2
+      - name: Check (MSRV 1.85)
+        run: cargo check
