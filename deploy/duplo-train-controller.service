@@ -1,0 +1,39 @@
+[Unit]
+Description=LEGO DUPLO 10427 BLE-to-MQTT bridge
+After=bluetooth.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/duplo-train-controller
+
+# Optional config: the leading '-' means the unit still starts if the file is absent.
+EnvironmentFile=-/etc/duplo-train/.env
+
+# Auto-restart a crashed actor; this is the supervision the project relies on.
+Restart=on-failure
+RestartSec=5
+
+# User: runs as root for reliable BlueZ/D-Bus access. The BLE stack needs
+# CAP_NET_RAW + CAP_NET_ADMIN; granting them as ambient capabilities below
+# lets the binary scan and connect even though NoNewPrivileges is set.
+#
+# To run as a dedicated unprivileged user instead, create one and add it to
+# the 'bluetooth' group, then set:
+#   User=duplo-train
+#   SupplementaryGroups=bluetooth
+# Verify scanning still works — some BlueZ polkit setups require extra rules.
+User=root
+AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
+NoNewPrivileges=true
+
+# Sandboxing. Kept conservative so BlueZ/D-Bus access keeps working.
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+# NOTE: do NOT add PrivateNetwork=true — it would cut off the MQTT broker.
+# NOTE: do NOT add PrivateDevices=true or RestrictAddressFamilies without
+# AF_BLUETOOTH — both can break the BLE/HCI socket access.
+
+[Install]
+WantedBy=multi-user.target
