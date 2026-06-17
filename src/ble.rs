@@ -189,7 +189,9 @@ impl BleActor {
             }
         }
 
-        let _ = self.disconnect().await;
+        if let Err(e) = self.disconnect().await {
+            warn!(error = %e, "Disconnect during shutdown failed");
+        }
         Ok(())
     }
 
@@ -294,7 +296,9 @@ impl BleActor {
 
         if let Some(peripheral) = self.find_train_in_peripherals().await {
             info!("Found DUPLO train in cached peripherals");
-            self.adapter.stop_scan().await.ok();
+            if let Err(e) = self.adapter.stop_scan().await {
+                debug!(error = %e, "stop_scan failed");
+            }
             return self.connect_to_peripheral(peripheral).await;
         }
 
@@ -309,7 +313,9 @@ impl BleActor {
                         for peripheral in peripherals {
                             if peripheral.id() == id && self.is_duplo_train(&peripheral).await {
                                 info!("Found DUPLO train via discovery event");
-                                self.adapter.stop_scan().await.ok();
+                                if let Err(e) = self.adapter.stop_scan().await {
+                                    debug!(error = %e, "stop_scan failed");
+                                }
                                 return self.connect_to_peripheral(peripheral).await;
                             }
                         }
@@ -321,7 +327,9 @@ impl BleActor {
                     debug!("Scan timeout, checking peripherals one last time");
                     if let Some(peripheral) = self.find_train_in_peripherals().await {
                         info!("Found DUPLO train on final check");
-                        self.adapter.stop_scan().await.ok();
+                        if let Err(e) = self.adapter.stop_scan().await {
+                            debug!(error = %e, "stop_scan failed");
+                        }
                         return self.connect_to_peripheral(peripheral).await;
                     }
                     break;
@@ -329,7 +337,9 @@ impl BleActor {
             }
         }
 
-        self.adapter.stop_scan().await.ok();
+        if let Err(e) = self.adapter.stop_scan().await {
+            debug!(error = %e, "stop_scan failed");
+        }
         anyhow::bail!("Scan timeout: DUPLO train not found")
     }
 

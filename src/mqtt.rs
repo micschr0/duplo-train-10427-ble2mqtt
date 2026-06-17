@@ -207,15 +207,20 @@ impl MqttActor {
         let text = String::from_utf8_lossy(payload);
         let text = text.trim();
 
-        if topic == self.topics.cmd {
+        let command = if topic == self.topics.cmd {
             text.parse::<TrainCommand>().ok().map(Command::Train)
         } else if topic == self.topics.led_set {
             text.parse::<LedColor>().ok().map(Command::Led)
         } else if topic == self.topics.sound_set {
             text.parse::<DuploSound>().ok().map(Command::Sound)
         } else {
-            None
+            return None;
+        };
+
+        if command.is_none() {
+            warn!(topic = %topic, payload = %text, "Ignoring unparseable command payload");
         }
+        command
     }
 
     /// Check if this command should be blocked as duplicate.
