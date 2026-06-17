@@ -54,3 +54,10 @@ Motor speeds are validated at startup — invalid ranges cause a fatal error.
 - **Integration tests need Docker:** `tests/mqtt_integration.rs` spins up a real Mosquitto broker via testcontainers — Docker must be running or those tests fail.
 - **Run unit tests without Docker:** `cargo test --bins` skips the Mosquitto-dependent integration suite (133 unit tests in `src/`).
 - **Cross-compile needs `cross`:** `./scripts/build-rpi4.sh` uses cross-rs; install with `cargo install cross --git https://github.com/cross-rs/cross`.
+- **MSRV is Rust 1.88 (edition 2024):** the crate uses let-chains, stable since 1.88. Don't lower the edition or `rust-version` — CI enforces it via a dedicated MSRV job.
+
+## Workflow & Release
+
+- **`main` is protected:** no direct or force pushes — always open a PR. Required checks (Test, Lint, Audit) must pass, the branch must be up to date, and linear history is enforced.
+- **Versioning:** annotated tags `vX.Y.Z` are stable releases (cut with the `release` skill); `main` carries `X.Y.Z-dev`. The binary logs a `GIT_DESCRIBE` build id at startup, so dev builds self-identify.
+- **No hardware in CI/worktrees:** runtime BLE/MQTT/train behavior can't be exercised there (no adapter, broker, or train). Verify changes with `cargo build`, `cargo clippy`, `cargo test --bins`; confirm real behavior on the Pi.
