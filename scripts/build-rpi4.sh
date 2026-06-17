@@ -31,6 +31,13 @@ if ! docker info &> /dev/null; then
     exit 1
 fi
 
+# Compute the git build id on the host and forward it into the cross
+# container (allow-listed in Cross.toml). build.rs reads $GIT_DESCRIBE;
+# the container has no git history of its own. Empty is fine — build.rs
+# falls back to the crate version.
+GIT_DESCRIBE="$(git describe --tags --always --dirty 2>/dev/null || true)"
+export GIT_DESCRIBE
+
 # Determine build mode
 BUILD_MODE="${1:-release}"
 
