@@ -8,6 +8,8 @@ mod mqtt;
 mod protocol;
 mod types;
 
+use std::time::Duration;
+
 use anyhow::{Context, Result};
 use tokio::sync::mpsc;
 use tracing::{error, info};
@@ -16,7 +18,7 @@ use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitEx
 use crate::ble::BleActor;
 use crate::config::{MotorConfig, MqttConfig};
 use crate::mqtt::MqttActor;
-use crate::types::{Command, CommandExecuted, StatusUpdate};
+use crate::types::{Command, CommandExecuted, StatusUpdate, TrainCommand};
 
 const COMMAND_CHANNEL_SIZE: usize = 32;
 const STATUS_CHANNEL_SIZE: usize = 32;
@@ -67,6 +69,9 @@ async fn main() -> Result<()> {
         }
     });
 
+    // Keep a sender for best-effort motor stop during shutdown.
+    let shutdown_cmd_tx = cmd_tx.clone();
+
     let mqtt_handle = tokio::spawn(async move {
         if let Err(e) = mqtt_actor
             .run(mqtt_event_loop, cmd_tx, status_rx, executed_rx)
@@ -76,7 +81,8 @@ async fn main() -> Result<()> {
         }
     });
 
-    // Wait for either actor to complete (which indicates an error)
+    // Wait for either actor to complete (which indicates an error) or a
+    // shutdown signal (SIGINT/SIGTERM).
     tokio::select! {
         result = ble_handle => {
             error!("BLE actor terminated unexpectedly");
@@ -86,9 +92,50 @@ async fn main() -> Result<()> {
             error!("MQTT actor terminated unexpectedly");
             result?;
         }
+        () = shutdown_signal() => {
+            info!("Shutdown signal received, stopping train and exiting");
+            // Best-effort: stop the motor so the train doesn't keep running.
+            // Bounded by a timeout so shutdown can never hang.
+            let _ = tokio::time::timeout(
+                Duration::from_millis(500),
+                shutdown_cmd_tx.send(Command::Train(TrainCommand::Stop)),
+            )
+            .await;
+        }
     }
 
     Ok(())
+}
+
+/// Resolves when the process receives a shutdown signal (SIGINT or SIGTERM).
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        if let Err(e) = tokio::signal::ctrl_c().await {
+            error!(error = %e, "Failed to listen for ctrl_c");
+        }
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+            Ok(mut sig) => {
+                sig.recv().await;
+            }
+            Err(e) => {
+                error!(error = %e, "Failed to install SIGTERM handler");
+                // Never resolve so the ctrl_c arm remains the trigger.
+                std::future::pending::<()>().await;
+            }
+        }
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        () = ctrl_c => {}
+        () = terminate => {}
+    }
 }
 
 /// Initialize tracing with environment filter.
