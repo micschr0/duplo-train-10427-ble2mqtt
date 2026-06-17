@@ -1,6 +1,6 @@
 [package]
 name = "duplo-train-controller"
-version = "0.2.1"
+version = "0.3.0-dev"
 edition = "2024"
 description = "BLE-to-MQTT bridge for LEGO DUPLO 10427 train"
 license = "MIT"
