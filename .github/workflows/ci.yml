@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install BLE/D-Bus system deps
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libdbus-1-dev pkg-config
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.96.0
       - uses: Swatinem/rust-cache@v2
       - name: Build
         run: cargo build
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install BLE/D-Bus system deps
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libdbus-1-dev pkg-config
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.96.0
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
@@ -61,4 +61,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.88
       - uses: Swatinem/rust-cache@v2
       - name: Check (MSRV 1.88)
-        run: cargo check
+        run: cargo +1.88 check

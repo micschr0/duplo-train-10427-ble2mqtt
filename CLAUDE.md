@@ -55,6 +55,7 @@ Motor speeds are validated at startup — invalid ranges cause a fatal error.
 - **Run unit tests without Docker:** `cargo test --bins` skips the Mosquitto-dependent integration suite (133 unit tests in `src/`).
 - **Cross-compile needs `cross`:** `./scripts/build-rpi4.sh` uses cross-rs; install with `cargo install cross --git https://github.com/cross-rs/cross`.
 - **MSRV is Rust 1.88 (edition 2024):** the crate uses let-chains, stable since 1.88. Don't lower the edition or `rust-version` — CI enforces it via a dedicated MSRV job.
+- **Toolchain pinned:** `rust-toolchain.toml` pins stable **1.96.0** for local + CI; the MSRV floor stays 1.88 (CI checks it with `cargo +1.88 check`).
 
 ## Workflow & Release
 
