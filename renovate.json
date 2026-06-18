@@ -1,0 +1,64 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices"],
+  "timezone": "Europe/Berlin",
+  "schedule": ["after 8am and before 6pm on Monday"],
+  "cargo": {
+    "rangeStrategy": "update-lockfile"
+  },
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "minimumReleaseAge": "0 days",
+    "schedule": ["at any time"],
+    "automerge": false
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+    "schedule": ["after 8am and before 6pm on Sunday"]
+  },
+  "packageRules": [
+    {
+      "description": "Group tokio crates",
+      "matchManagers": ["cargo"],
+      "matchPackageNames": ["tokio*"],
+      "groupName": "tokio"
+    },
+    {
+      "description": "Group serde crates",
+      "matchManagers": ["cargo"],
+      "matchPackageNames": ["serde*"],
+      "groupName": "serde"
+    },
+    {
+      "description": "Group tracing crates",
+      "matchManagers": ["cargo"],
+      "matchPackageNames": ["tracing*"],
+      "groupName": "tracing"
+    },
+    {
+      "description": "Group testcontainers crates",
+      "matchManagers": ["cargo"],
+      "matchPackageNames": ["testcontainers*"],
+      "groupName": "testcontainers"
+    },
+    {
+      "description": "Automerge non-major dependency updates after a 7-day soak",
+      "matchUpdateTypes": ["patch", "minor"],
+      "minimumReleaseAge": "7 days",
+      "automerge": true
+    },
+    {
+      "description": "Automerge GitHub Actions minor/patch/digest updates",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "automerge": true
+    },
+    {
+      "description": "Major updates require manual review",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    }
+  ]
+}
