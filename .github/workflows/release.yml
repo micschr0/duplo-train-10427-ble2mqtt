@@ -1,0 +1,49 @@
+name: Release Artifacts
+
+# Build the Raspberry Pi 4 (aarch64) binary and attach it to the GitHub
+# Release as a .tar.gz + SHA256. Runs when a release is published; can also
+# be triggered manually to backfill an existing release tag.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to build & attach (e.g. v0.3.0)"
+        required: true
+
+jobs:
+  rpi4:
+    name: Build & attach RPi4 (aarch64) binary
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - uses: dtolnay/rust-toolchain@1.96.0
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+      # cross handles the arm64 libdbus deps via Cross.toml and honors the
+      # pinned toolchain (rust-toolchain.toml). GIT_DESCRIBE is forwarded into
+      # the container (Cross.toml passthrough) so the binary logs the tag.
+      - name: Cross-compile (aarch64, release)
+        env:
+          GIT_DESCRIBE: ${{ env.TAG }}
+        run: cross build --release --target aarch64-unknown-linux-gnu
+      - name: Package tarball + checksum
+        run: |
+          set -euo pipefail
+          dir="target/aarch64-unknown-linux-gnu/release"
+          pkg="duplo-train-controller-${TAG}-aarch64-unknown-linux-gnu.tar.gz"
+          tar -C "$dir" -czf "$pkg" duplo-train-controller
+          sha256sum "$pkg" > "$pkg.sha256"
+          echo "PKG=$pkg" >> "$GITHUB_ENV"
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" "$PKG" "$PKG.sha256" --clobber
