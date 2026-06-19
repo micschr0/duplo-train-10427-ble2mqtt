@@ -4,6 +4,7 @@
   "labels": ["dependencies"],
   "timezone": "Europe/Berlin",
   "schedule": ["after 8am and before 6pm on Monday"],
+  "gitAuthor": "micschr0 <61987798+micschr0@users.noreply.github.com>",
   "cargo": {
     "rangeStrategy": "update-lockfile"
   },
@@ -45,6 +46,11 @@
       "groupName": "testcontainers"
     },
     {
+      "description": "Never pin cargo deps (dev/normal/build) - Cargo.lock gives reproducibility; overrides config:best-practices :pinDevDependencies",
+      "matchManagers": ["cargo"],
+      "rangeStrategy": "update-lockfile"
+    },
+    {
       "description": "Automerge non-major dependency updates after a 7-day soak",
       "matchUpdateTypes": ["patch", "minor"],
       "minimumReleaseAge": "7 days",
@@ -55,6 +61,13 @@
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "automerge": true
+    },
+    {
+      "description": "dtolnay/rust-toolchain is intentionally SHA-pinned with a version comment + explicit toolchain input; do not attempt digest updates (keeps the SHA)",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["dtolnay/rust-toolchain"],
+      "matchUpdateTypes": ["digest"],
+      "enabled": false
     },
     {
       "description": "Major updates require manual review",
