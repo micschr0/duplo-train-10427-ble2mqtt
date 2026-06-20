@@ -65,7 +65,7 @@ pub struct BleActor {
     message_buffer: MessageBuffer,
     last_battery: Option<u8>,
     last_speed: i16,
-    boost_expires: Option<Instant>,
+    boost_expires: Option<tokio::time::Instant>,
 }
 
 impl BleActor {
@@ -117,11 +117,9 @@ impl BleActor {
         let mut idle_check = tokio::time::interval(Duration::from_secs(60));
 
         loop {
-            let boost_timeout = self
-                .boost_expires
-                .map(|exp| exp.saturating_duration_since(Instant::now()));
-
             tokio::select! {
+                biased;
+
                 recv = cmd_rx.recv() => {
                     let Some(cmd) = recv else {
                         info!("Command channel closed, BLE actor shutting down");
@@ -140,9 +138,12 @@ impl BleActor {
                     self.handle_notification(&notification, &status_tx).await;
                 }
 
+                // sleep_until with a fixed deadline is used (not sleep with a
+                // remaining duration) so a high-frequency notification stream
+                // cannot starve boost expiry by resetting the timer each iteration.
                 _ = async {
-                    match boost_timeout {
-                        Some(duration) => tokio::time::sleep(duration).await,
+                    match self.boost_expires {
+                        Some(deadline) => tokio::time::sleep_until(deadline).await,
                         None => std::future::pending().await,
                     }
                 } => {
@@ -220,6 +221,22 @@ impl BleActor {
             )
             .await;
             notify(status_tx, StatusUpdate::Attempts(self.attempts)).await;
+
+            // Exponential backoff: no delay on first attempt, 2 s on second,
+            // 8 s on third and beyond — prevents hammering the adapter when
+            // the train is out of range and HA keeps sending commands.
+            let backoff = match self.attempts {
+                1 => Duration::ZERO,
+                2 => Duration::from_secs(2),
+                _ => Duration::from_secs(8),
+            };
+            if !backoff.is_zero() {
+                info!(
+                    backoff_secs = backoff.as_secs(),
+                    "Backing off before BLE scan"
+                );
+                tokio::time::sleep(backoff).await;
+            }
 
             match self.scan_and_connect().await {
                 Ok(()) => {
@@ -421,7 +438,8 @@ impl BleActor {
                 notify(status_tx, StatusUpdate::Motor(speed)).await;
 
                 if let Some(duration_secs) = motor_config.boost_duration {
-                    self.boost_expires = Some(Instant::now() + Duration::from_secs(duration_secs));
+                    self.boost_expires =
+                        Some(tokio::time::Instant::now() + Duration::from_secs(duration_secs));
                     debug!(duration_secs, "Boost timer started");
                 } else {
                     self.boost_expires = None;
@@ -493,7 +511,12 @@ impl BleActor {
                     return;
                 }
 
-                if battery_pct <= 100 && self.last_battery != Some(battery_pct) {
+                if battery_pct > 100 {
+                    warn!(
+                        battery_pct,
+                        "Hub reported out-of-range battery level; ignoring"
+                    );
+                } else if self.last_battery != Some(battery_pct) {
                     self.last_battery = Some(battery_pct);
                     debug!(battery_pct, "Battery level updated");
                     notify(status_tx, StatusUpdate::Battery(battery_pct)).await;

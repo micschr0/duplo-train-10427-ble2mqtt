@@ -183,7 +183,7 @@ fn parse_feedback_message(data: &[u8]) -> Option<ParsedMessage> {
     } else if b & feedback::BUSY != 0 {
         CommandFeedback::Busy
     } else {
-        let empty = (b & feedback::BUFFER_EMPTY != 0) || (b & feedback::BUFFER_LOW == 0);
+        let empty = b & feedback::BUFFER_EMPTY != 0;
         CommandFeedback::BufferUpdate { empty }
     };
     Some(ParsedMessage::Feedback {
@@ -256,6 +256,19 @@ mod tests {
         #[test]
         fn parse_feedback_buffer_not_empty() {
             let data = vec![0x05, 0x00, 0x82, 0x32, 0x08];
+            assert_eq!(
+                parse_message(&data),
+                Some(ParsedMessage::Feedback {
+                    port_id: 0x32,
+                    feedback: CommandFeedback::BufferUpdate { empty: false }
+                })
+            );
+        }
+
+        #[test]
+        fn parse_feedback_zero_byte_not_empty() {
+            // 0x00 means no flags set — BUFFER_EMPTY bit is not set, so empty must be false.
+            let data = vec![0x05, 0x00, 0x82, 0x32, 0x00];
             assert_eq!(
                 parse_message(&data),
                 Some(ParsedMessage::Feedback {

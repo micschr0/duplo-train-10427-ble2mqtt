@@ -106,6 +106,8 @@ impl MqttActor {
 
         loop {
             tokio::select! {
+                biased;
+
                 // Resume event-loop polling after backoff. Status drain stays
                 // active throughout so the BLE actor is never blocked on us.
                 _ = async {

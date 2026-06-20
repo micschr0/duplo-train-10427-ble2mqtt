@@ -61,7 +61,7 @@ async fn main() -> Result<()> {
 
     info!("Actors initialized, starting event loops");
 
-    let ble_handle = tokio::spawn(async move {
+    let mut ble_handle = tokio::spawn(async move {
         if let Err(e) = ble_actor
             .run(cmd_rx, status_tx, executed_tx, motor_config)
             .await
@@ -73,7 +73,7 @@ async fn main() -> Result<()> {
     // Keep a sender for best-effort motor stop during shutdown.
     let shutdown_cmd_tx = cmd_tx.clone();
 
-    let mqtt_handle = tokio::spawn(async move {
+    let mut mqtt_handle = tokio::spawn(async move {
         if let Err(e) = mqtt_actor
             .run(mqtt_event_loop, cmd_tx, status_rx, executed_rx)
             .await
@@ -85,11 +85,11 @@ async fn main() -> Result<()> {
     // Wait for either actor to complete (which indicates an error) or a
     // shutdown signal (SIGINT/SIGTERM).
     tokio::select! {
-        result = ble_handle => {
+        result = &mut ble_handle => {
             error!("BLE actor terminated unexpectedly");
             result?;
         }
-        result = mqtt_handle => {
+        result = &mut mqtt_handle => {
             error!("MQTT actor terminated unexpectedly");
             result?;
         }
@@ -101,6 +101,14 @@ async fn main() -> Result<()> {
                 Duration::from_millis(500),
                 shutdown_cmd_tx.send(Command::Train(TrainCommand::Stop)),
             )
+            .await;
+            // Drop the sender so the BLE actor's cmd_rx can eventually close.
+            drop(shutdown_cmd_tx);
+            // Give actors time to process the Stop and run their cleanup
+            // (BLE disconnect). Bounded so shutdown can never hang.
+            let _ = tokio::time::timeout(Duration::from_secs(3), async {
+                let _ = tokio::join!(ble_handle, mqtt_handle);
+            })
             .await;
         }
     }

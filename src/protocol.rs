@@ -69,8 +69,6 @@ mod feedback {
     pub const BUSY: u8 = 0x10;
     /// Output buffer drained to empty.
     pub const BUFFER_EMPTY: u8 = 0x01;
-    /// Output buffer has remaining capacity.
-    pub const BUFFER_LOW: u8 = 0x08;
 }
 
 // ── Submodules ────────────────────────────────────────────────────────────────

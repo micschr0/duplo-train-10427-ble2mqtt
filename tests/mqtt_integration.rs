@@ -1,8 +1,11 @@
 //! Integration tests for MQTT functionality using testcontainers.
 //!
-//! These tests require Docker to be running.
+//! These tests require Docker to be running. They are marked `#[ignore]` so
+//! plain `cargo test` skips them. Run explicitly with:
 //!
-//! Run with: `cargo test --test mqtt_integration`
+//! ```
+//! cargo test --test mqtt_integration -- --include-ignored
+//! ```
 
 use std::time::Duration;
 
@@ -15,8 +18,7 @@ use tokio::time::timeout;
 
 /// Test context with Mosquitto container and helper methods.
 struct MqttTestContext {
-    #[allow(dead_code)]
-    container: ContainerAsync<Mosquitto>,
+    _container: ContainerAsync<Mosquitto>,
     port: u16,
 }
 
@@ -30,7 +32,10 @@ impl MqttTestContext {
             .get_host_port_ipv4(1883)
             .await
             .expect("Failed to get container port");
-        Self { container, port }
+        Self {
+            _container: container,
+            port,
+        }
     }
 
     fn client(&self, client_id: &str) -> (AsyncClient, rumqttc::EventLoop) {
@@ -59,29 +64,41 @@ impl MqttTestContext {
 
 /// Wait for connection acknowledgment.
 async fn wait_for_connack(event_loop: &mut rumqttc::EventLoop) {
-    loop {
-        if let Ok(Event::Incoming(Packet::ConnAck(_))) = event_loop.poll().await {
-            break;
+    timeout(Duration::from_secs(10), async {
+        loop {
+            if let Ok(Event::Incoming(Packet::ConnAck(_))) = event_loop.poll().await {
+                break;
+            }
         }
-    }
+    })
+    .await
+    .expect("timed out waiting for ConnAck");
 }
 
 /// Wait for subscription acknowledgment.
 async fn wait_for_suback(event_loop: &mut rumqttc::EventLoop) {
-    loop {
-        if let Ok(Event::Incoming(Packet::SubAck(_))) = event_loop.poll().await {
-            break;
+    timeout(Duration::from_secs(10), async {
+        loop {
+            if let Ok(Event::Incoming(Packet::SubAck(_))) = event_loop.poll().await {
+                break;
+            }
         }
-    }
+    })
+    .await
+    .expect("timed out waiting for SubAck");
 }
 
 /// Wait for publish acknowledgment.
 async fn wait_for_puback(event_loop: &mut rumqttc::EventLoop) {
-    loop {
-        if let Ok(Event::Incoming(Packet::PubAck(_))) = event_loop.poll().await {
-            break;
+    timeout(Duration::from_secs(10), async {
+        loop {
+            if let Ok(Event::Incoming(Packet::PubAck(_))) = event_loop.poll().await {
+                break;
+            }
         }
-    }
+    })
+    .await
+    .expect("timed out waiting for PubAck");
 }
 
 /// Wait for a published message.
@@ -101,11 +118,11 @@ async fn wait_for_publish(
 }
 
 // =============================================================================
-// Tests - require Docker, run with: cargo test --test mqtt_integration --ignored
+// Tests - require Docker, run with: cargo test --test mqtt_integration -- --include-ignored
 // =============================================================================
 
 #[tokio::test]
-
+#[ignore = "requires Docker"]
 async fn test_publish_subscribe() {
     let ctx = MqttTestContext::new().await;
 
@@ -123,7 +140,7 @@ async fn test_publish_subscribe() {
 }
 
 #[tokio::test]
-
+#[ignore = "requires Docker"]
 async fn test_retained_message() {
     let ctx = MqttTestContext::new().await;
 
@@ -151,7 +168,7 @@ async fn test_retained_message() {
 #[case("duplo/train/cmd", b"backward")]
 #[case("duplo/train/cmd", b"stop")]
 #[tokio::test]
-
+#[ignore = "requires Docker"]
 async fn test_command_topics(#[case] topic: &str, #[case] payload: &[u8]) {
     let ctx = MqttTestContext::new().await;
 
@@ -169,7 +186,7 @@ async fn test_command_topics(#[case] topic: &str, #[case] payload: &[u8]) {
 }
 
 #[tokio::test]
-
+#[ignore = "requires Docker"]
 async fn test_state_json_roundtrip() {
     let ctx = MqttTestContext::new().await;
 
@@ -209,7 +226,7 @@ async fn test_state_json_roundtrip() {
 }
 
 #[tokio::test]
-
+#[ignore = "requires Docker"]
 async fn test_idle_state_json() {
     let ctx = MqttTestContext::new().await;
 
@@ -247,7 +264,7 @@ async fn test_idle_state_json() {
 }
 
 #[tokio::test]
-
+#[ignore = "requires Docker"]
 async fn test_executed_event() {
     let ctx = MqttTestContext::new().await;
 
@@ -281,7 +298,7 @@ async fn test_executed_event() {
 }
 
 #[tokio::test]
-
+#[ignore = "requires Docker"]
 async fn test_connecting_state_with_attempts() {
     let ctx = MqttTestContext::new().await;
 
@@ -320,7 +337,7 @@ async fn test_connecting_state_with_attempts() {
 // =============================================================================
 
 #[tokio::test]
-
+#[ignore = "requires Docker"]
 async fn test_state_retained_message() {
     // Requirement: duplo/train/state is retained
     let ctx = MqttTestContext::new().await;
@@ -365,7 +382,7 @@ async fn test_state_retained_message() {
 }
 
 #[tokio::test]
-
+#[ignore = "requires Docker"]
 async fn test_executed_not_retained() {
     // Requirement: duplo/train/executed is NOT retained
     let ctx = MqttTestContext::new().await;
@@ -407,7 +424,7 @@ async fn test_executed_not_retained() {
 #[case("backward")]
 #[case("stop")]
 #[tokio::test]
-
+#[ignore = "requires Docker"]
 async fn test_executed_event_all_commands(#[case] cmd: &str) {
     // Requirement: executed event contains {"cmd": "..."}
     let ctx = MqttTestContext::new().await;
@@ -440,6 +457,7 @@ async fn test_executed_event_all_commands(#[case] cmd: &str) {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker"]
 async fn test_state_attempts_0_to_1() {
     // Requirement: HA triggers bell on attempts 0→1
     let ctx = MqttTestContext::new().await;
@@ -500,6 +518,7 @@ async fn test_state_attempts_0_to_1() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker"]
 async fn test_state_attempts_sequence_0_1_2_3() {
     // Requirement: attempts goes 0→1→2→3 with different HA triggers
     let ctx = MqttTestContext::new().await;
@@ -562,6 +581,7 @@ async fn test_state_attempts_sequence_0_1_2_3() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker"]
 async fn test_state_connecting_to_connected() {
     // Requirement: HA triggers toast on status connecting→connected
     let ctx = MqttTestContext::new().await;
@@ -631,6 +651,7 @@ async fn test_state_connecting_to_connected() {
 #[case(100, "max-forward")]
 #[case(-100, "max-backward")]
 #[tokio::test]
+#[ignore = "requires Docker"]
 async fn test_state_motor_values(#[case] motor_value: i32, #[case] description: &str) {
     // Requirement: motor range -100..100
     let ctx = MqttTestContext::new().await;
@@ -674,6 +695,7 @@ async fn test_state_motor_values(#[case] motor_value: i32, #[case] description: 
 #[case(75)]
 #[case(100)]
 #[tokio::test]
+#[ignore = "requires Docker"]
 async fn test_state_battery_values(#[case] battery: u8) {
     // Requirement: battery range 0-100
     let ctx = MqttTestContext::new().await;
@@ -712,6 +734,7 @@ async fn test_state_battery_values(#[case] battery: u8) {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker"]
 async fn test_state_battery_persists_across_disconnect() {
     // Requirement: battery value survives state transitions (connected → standby → connected)
     let ctx = MqttTestContext::new().await;
