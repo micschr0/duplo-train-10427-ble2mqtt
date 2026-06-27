@@ -41,17 +41,13 @@ impl MqttConfig {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(default)]
 pub struct MotorConfig {
-    #[serde(rename = "motor_forward")]
     pub forward: i8,
-    #[serde(rename = "motor_boost")]
     pub boost: i8,
     /// Optional boost duration in seconds. If set, boost automatically
     /// reverts to forward speed after this duration. 0 or unset = unlimited.
-    #[serde(rename = "motor_boost_duration", default)]
+    #[serde(default)]
     pub boost_duration: Option<u64>,
-    #[serde(rename = "motor_backward")]
     pub backward: i8,
-    #[serde(rename = "backward_delay")]
     pub backward_delay: u64,
 }
 impl Default for MotorConfig {
@@ -69,7 +65,7 @@ impl Default for MotorConfig {
 impl MotorConfig {
     /// Load configuration from environment variables.
     pub fn from_env() -> Result<Self> {
-        let mut cfg: Self = serde_env::from_env()
+        let mut cfg: Self = serde_env::from_env_with_prefix("MOTOR")
             .context("Failed to parse motor configuration from environment")?;
         cfg.normalize();
         cfg.validate()?;

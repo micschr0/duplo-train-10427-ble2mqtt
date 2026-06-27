@@ -383,15 +383,14 @@ mod tests {
 
         #[test]
         fn boost_duration_zero_becomes_none() {
-            let vars = vec![("motor_boost_duration".to_string(), "0".to_string())];
+            let vars = vec![("boost_duration".to_string(), "0".to_string())];
             let mut config: MotorConfig = serde_env::from_iter(vars).unwrap();
             config.normalize();
             assert_eq!(config.boost_duration, None);
         }
-
         #[test]
         fn boost_duration_positive_value() {
-            let vars = vec![("motor_boost_duration".to_string(), "10".to_string())];
+            let vars = vec![("boost_duration".to_string(), "10".to_string())];
             let mut config: MotorConfig = serde_env::from_iter(vars).unwrap();
             config.normalize();
             assert_eq!(config.boost_duration, Some(10));
