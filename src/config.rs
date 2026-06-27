@@ -55,7 +55,6 @@ pub struct MotorConfig {
     pub backward_delay: u64,
 }
 
-
 impl Default for MotorConfig {
     fn default() -> Self {
         Self {
