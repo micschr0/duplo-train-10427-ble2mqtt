@@ -46,12 +46,8 @@ pub struct MotorConfig {
     #[serde(rename = "motor_boost")]
     pub boost: i8,
     /// Optional boost duration in seconds. If set, boost automatically
-    /// reverts to forward speed after this duration. None = unlimited.
-    #[serde(
-        rename = "motor_boost_duration",
-        default,
-        deserialize_with = "deserialize_optional_duration"
-    )]
+    /// reverts to forward speed after this duration. 0 or unset = unlimited.
+    #[serde(rename = "motor_boost_duration", default)]
     pub boost_duration: Option<u64>,
     #[serde(rename = "motor_backward")]
     pub backward: i8,
@@ -59,13 +55,6 @@ pub struct MotorConfig {
     pub backward_delay: u64,
 }
 
-fn deserialize_optional_duration<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let opt: Option<u64> = Option::deserialize(deserializer)?;
-    Ok(opt.filter(|&v| v > 0))
-}
 
 impl Default for MotorConfig {
     fn default() -> Self {
@@ -82,10 +71,19 @@ impl Default for MotorConfig {
 impl MotorConfig {
     /// Load configuration from environment variables.
     pub fn from_env() -> Result<Self> {
-        let cfg: Self = serde_env::from_env()
+        let mut cfg: Self = serde_env::from_env()
             .context("Failed to parse motor configuration from environment")?;
+        cfg.normalize();
         cfg.validate()?;
         Ok(cfg)
+    }
+
+    /// Normalize deserialized values. Call after any deserialization.
+    /// Maps `boost_duration: Some(0)` to `None` (0 means unlimited).
+    pub(crate) fn normalize(&mut self) {
+        if self.boost_duration == Some(0) {
+            self.boost_duration = None;
+        }
     }
 
     /// Verify motor speeds are within the protocol's valid signed range.
