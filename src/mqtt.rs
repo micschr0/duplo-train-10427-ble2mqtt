@@ -43,8 +43,8 @@ impl Topics {
 }
 
 /// MQTT actor for Home Assistant communication.
+#[must_use = "MQTT actor must be passed to run()"]
 pub struct MqttActor {
-    client: AsyncClient,
     topics: Topics,
     current_state: TrainState,
     last_cmd: Option<TrainCommand>,
@@ -204,7 +204,6 @@ impl MqttActor {
         Ok(())
     }
 
-    /// Route an incoming MQTT publish to a typed command based on its topic.
     fn route_publish(&self, topic: &str, payload: &[u8]) -> Option<Command> {
         let text = String::from_utf8_lossy(payload);
         let text = text.trim();

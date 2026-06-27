@@ -113,6 +113,7 @@ pub enum ConnectionState {
 
 /// Train state published to MQTT.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TrainState {
     pub status: ConnectionState,
     pub attempts: u8,

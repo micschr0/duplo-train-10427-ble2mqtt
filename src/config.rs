@@ -5,8 +5,8 @@ use serde::Deserialize;
 
 /// MQTT configuration from environment variables.
 /// Prefix: `MQTT_`
-#[derive(Debug, Clone, Deserialize)]
-#[serde(default)]
+#[derive(Clone, Deserialize, PartialEq)]
+#[serde(default, deny_unknown_fields)]
 pub struct MqttConfig {
     pub host: String,
     pub port: u16,
@@ -29,6 +29,19 @@ impl Default for MqttConfig {
     }
 }
 
+impl std::fmt::Debug for MqttConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MqttConfig")
+            .field("host", &self.host)
+            .field("port", &self.port)
+            .field("username", &self.username)
+            .field("password", &self.password.as_ref().map(|_| "***"))
+            .field("client_id", &self.client_id)
+            .field("base_topic", &self.base_topic)
+            .finish()
+    }
+}
+
 impl MqttConfig {
     /// Load configuration from environment variables with `MQTT_` prefix.
     pub fn from_env() -> Result<Self> {
@@ -38,8 +51,8 @@ impl MqttConfig {
 }
 
 /// Motor speed configuration from environment variables.
-#[derive(Debug, Clone, Deserialize)]
-#[serde(default)]
+#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[serde(default, deny_unknown_fields)]
 pub struct MotorConfig {
     pub forward: i8,
     /// Renamed from `boost` to `boost_speed` to avoid serde-env `_` tree
