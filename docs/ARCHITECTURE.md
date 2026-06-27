@@ -28,7 +28,7 @@ channels owned by `main`.
 | Path                      | Responsibility                                                                                          |
 | ------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `src/main.rs`             | Wire up tracing, load config, build channels, spawn the two actors, exit when either one returns.       |
-| `src/config.rs`           | `MqttConfig` (`MQTT_*`) and `MotorConfig` (`MOTOR_*`, `BACKWARD_DELAY`) loaded via `envy` + `dotenvy`.   |
+| `src/config.rs`           | `MqttConfig` (`MQTT_*`) and `MotorConfig` (`MOTOR_*`, `BACKWARD_DELAY`) loaded via `serde-env` + `dotenvy`.   |
 | `src/types.rs`            | Shared message types between actors: `Command`, `StatusUpdate`, `CommandExecuted`, `TrainState`, enums. |
 | `src/ble.rs`              | `BleActor` — adapter scan, connect/disconnect, command writing, notification handling, idle timeouts.   |
 | `src/protocol.rs`         | LWP 3.0 constants (UUIDs, ports, message types) plus public re-exports of submodule API.                |

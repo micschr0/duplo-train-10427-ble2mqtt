@@ -32,8 +32,7 @@ impl Default for MqttConfig {
 impl MqttConfig {
     /// Load configuration from environment variables with `MQTT_` prefix.
     pub fn from_env() -> Result<Self> {
-        envy::prefixed("MQTT_")
-            .from_env()
+        serde_env::from_env_with_prefix("MQTT")
             .context("Failed to parse MQTT configuration from environment")
     }
 }
@@ -84,7 +83,7 @@ impl MotorConfig {
     /// Load configuration from environment variables.
     pub fn from_env() -> Result<Self> {
         let cfg: Self =
-            envy::from_env().context("Failed to parse motor configuration from environment")?;
+            serde_env::from_env().context("Failed to parse motor configuration from environment")?;
         cfg.validate()?;
         Ok(cfg)
     }

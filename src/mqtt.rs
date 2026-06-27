@@ -344,7 +344,7 @@ mod tests {
         #[test]
         fn deserialize_partial_config() {
             let vars = vec![("HOST".to_string(), "custom-host".to_string())];
-            let config: MqttConfig = envy::from_iter(vars).unwrap();
+            let config: MqttConfig = serde_env::from_iter(vars).unwrap();
             assert_eq!(config.host, "custom-host");
             assert_eq!(config.port, 1883);
         }
@@ -358,7 +358,7 @@ mod tests {
                 ("PASSWORD".to_string(), "pass".to_string()),
                 ("CLIENT_ID".to_string(), "my-client".to_string()),
             ];
-            let config: MqttConfig = envy::from_iter(vars).unwrap();
+            let config: MqttConfig = serde_env::from_iter(vars).unwrap();
 
             assert_eq!(config.host, "mqtt.example.com");
             assert_eq!(config.port, 8883);
@@ -384,14 +384,14 @@ mod tests {
         #[test]
         fn boost_duration_zero_becomes_none() {
             let vars = vec![("MOTOR_BOOST_DURATION".to_string(), "0".to_string())];
-            let config: MotorConfig = envy::from_iter(vars).unwrap();
+            let config: MotorConfig = serde_env::from_iter(vars).unwrap();
             assert_eq!(config.boost_duration, None);
         }
 
         #[test]
         fn boost_duration_positive_value() {
             let vars = vec![("MOTOR_BOOST_DURATION".to_string(), "10".to_string())];
-            let config: MotorConfig = envy::from_iter(vars).unwrap();
+            let config: MotorConfig = serde_env::from_iter(vars).unwrap();
             assert_eq!(config.boost_duration, Some(10));
         }
     }

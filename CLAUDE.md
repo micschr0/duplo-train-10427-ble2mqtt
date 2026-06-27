@@ -20,7 +20,7 @@ Two async actors communicate via tokio mpsc channels:
 - **BleActor** (`src/ble.rs`) — scans for the train, sends BLE commands, reads status updates
 - **MqttActor** (`src/mqtt.rs`) — publishes train status, subscribes to incoming commands
 - **Protocol** (`src/protocol.rs`) — LWP wire format: message encoding/decoding, BLE buffer handling
-- **Config** (in `src/mqtt.rs`) — `MqttConfig` (env prefix `MQTT_`) and `MotorConfig` (no prefix), loaded via `envy` + `dotenvy`
+- **Config** (`src/config.rs`) — `MqttConfig` (env prefix `MQTT_`) and `MotorConfig` (no prefix), loaded via `serde-env` + `dotenvy`
 
 MQTT topic layout (`<MQTT_BASE_TOPIC>/state`, `/executed`, `/availability`, `/cmd`) and Home Assistant integration are documented in `HOMEASSISTANT.md`.
 
