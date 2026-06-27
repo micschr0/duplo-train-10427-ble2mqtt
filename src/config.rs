@@ -54,7 +54,6 @@ pub struct MotorConfig {
     #[serde(rename = "backward_delay")]
     pub backward_delay: u64,
 }
-
 impl Default for MotorConfig {
     fn default() -> Self {
         Self {
