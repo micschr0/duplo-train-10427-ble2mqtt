@@ -45,6 +45,7 @@ impl Topics {
 /// MQTT actor for Home Assistant communication.
 #[must_use = "MQTT actor must be passed to run()"]
 pub struct MqttActor {
+    client: AsyncClient,
     topics: Topics,
     current_state: TrainState,
     last_cmd: Option<TrainCommand>,

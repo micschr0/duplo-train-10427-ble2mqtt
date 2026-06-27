@@ -7,7 +7,7 @@ use btleplug::api::{
     Central, CentralEvent, Characteristic, Manager as _, Peripheral as _, ScanFilter,
     ValueNotification, WriteType,
 };
-use btleplug::platform::{Adapter, Manager, Peripheral};
+use btleplug::platform::{Manager, Peripheral};
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use tokio_stream::StreamExt;
@@ -53,6 +53,7 @@ fn classify_attempt(prev_attempts: u8, last_elapsed: Option<Duration>) -> u8 {
 /// BLE actor for train communication.
 #[must_use = "BLE actor must be passed to run()"]
 pub struct BleActor {
+    adapter: Adapter,
     peripheral: Option<Peripheral>,
     characteristic: Option<Characteristic>,
     notification_rx: Option<mpsc::Receiver<ValueNotification>>,
