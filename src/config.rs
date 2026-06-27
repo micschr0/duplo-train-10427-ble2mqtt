@@ -82,8 +82,8 @@ impl Default for MotorConfig {
 impl MotorConfig {
     /// Load configuration from environment variables.
     pub fn from_env() -> Result<Self> {
-        let cfg: Self =
-            serde_env::from_env().context("Failed to parse motor configuration from environment")?;
+        let cfg: Self = serde_env::from_env()
+            .context("Failed to parse motor configuration from environment")?;
         cfg.validate()?;
         Ok(cfg)
     }
