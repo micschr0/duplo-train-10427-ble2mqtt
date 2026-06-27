@@ -42,12 +42,15 @@ impl MqttConfig {
 #[serde(default)]
 pub struct MotorConfig {
     pub forward: i8,
+    /// Renamed from `boost` to `boost_speed` to avoid serde-env `_` tree
+    /// collision with `boost_duration`.
+    #[serde(rename = "boost_speed")]
     pub boost: i8,
-    /// Optional boost duration in seconds. If set, boost automatically
-    /// reverts to forward speed after this duration. 0 or unset = unlimited.
     #[serde(default)]
     pub boost_duration: Option<u64>,
+    #[serde(rename = "backward_speed")]
     pub backward: i8,
+    #[serde(rename = "backward_delay_ms")]
     pub backward_delay: u64,
 }
 impl Default for MotorConfig {
@@ -86,11 +89,11 @@ impl MotorConfig {
             anyhow::bail!("MOTOR_FORWARD must be in 1..=100 (got {})", self.forward);
         }
         if !(1..=100).contains(&self.boost) {
-            anyhow::bail!("MOTOR_BOOST must be in 1..=100 (got {})", self.boost);
+            anyhow::bail!("MOTOR_BOOST_SPEED must be in 1..=100 (got {})", self.boost);
         }
         if !(-100..=-1).contains(&self.backward) {
             anyhow::bail!(
-                "MOTOR_BACKWARD must be in -100..=-1 (got {})",
+                "MOTOR_BACKWARD_SPEED must be in -100..=-1 (got {})",
                 self.backward
             );
         }
