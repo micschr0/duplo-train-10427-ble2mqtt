@@ -16,7 +16,9 @@ pub struct MessageBuffer {
 
 impl MessageBuffer {
     pub fn new() -> Self {
-        Self { buffer: Vec::with_capacity(MAX_MESSAGE_LEN) }
+        Self {
+            buffer: Vec::with_capacity(MAX_MESSAGE_LEN),
+        }
     }
 
     /// Append `data` and return any complete messages that are now available.
