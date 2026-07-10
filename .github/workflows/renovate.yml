@@ -53,11 +53,8 @@ jobs:
         with:
           configurationFile: renovate.json
           token: ${{ steps.app-token.outputs.token }}
-          # renovatebot/github-action v46.x does not forward
-          # RENOVATE_REPOSITORIES env var to the Docker container,
-          # so we pass the repo as a positional Renovate argument.
-          docker-cmd-file: renovate ${{ github.repository }}
         env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
           GIT_AUTHOR_NAME: micschro
           GIT_AUTHOR_EMAIL: micschr0@mailbox.org
           GIT_COMMITTER_NAME: micschro
