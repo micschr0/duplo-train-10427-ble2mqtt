@@ -61,4 +61,5 @@ jobs:
           GIT_COMMITTER_EMAIL: micschr0@mailbox.org
           # renovate.json exists; skip onboarding PR.
           RENOVATE_ONBOARDING: "false"
+          RENOVATE_REPOSITORY_CACHE: reset
           LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
