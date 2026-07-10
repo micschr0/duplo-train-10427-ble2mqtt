@@ -3,7 +3,6 @@
   "extends": ["config:best-practices", ":semanticCommits"],
   "labels": ["dependencies"],
   "timezone": "Europe/Berlin",
-  "repositoryChanged": "ignore",
   "schedule": ["after 8am and before 6pm on Monday"],
   "gitAuthor": "micschr0 <61987798+micschr0@users.noreply.github.com>",
   "cargo": {
