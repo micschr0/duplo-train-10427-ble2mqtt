@@ -1,4 +1,27 @@
+# zizmor — single source of truth for workflow suppressions.
+# No inline `# zizmor: ignore[...]` comments in workflow files.
+# All suppressions live here with rationale.
+
 rules:
+  # ---------- ci.yml + release.yml ----------
+  #
+  # dtolnay/rust-toolchain is pinned to a commit SHA.
+  # The `# 1.96.0` / `# 1.88` comments on the `uses:` lines are
+  # for humans only; the action does not actually resolve a branch ref.
+  stale-action-refs:
+    ignore:
+      - ci.yml
+      - release.yml
+
+  # dtolnay/rust-toolchain installs rustup components (clippy, rustfmt)
+  # that taiki-e/install-action does not provide. The two actions serve
+  # different purposes and are not redundant.
+  superfluous-actions:
+    ignore:
+      - ci.yml
+      - release.yml
+
+  # ---------- container image suppressions ----------
   template-injection:
     ignore: []
   unpinned-images:
