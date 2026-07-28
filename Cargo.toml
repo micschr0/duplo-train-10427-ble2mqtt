@@ -13,7 +13,7 @@ categories = ["embedded", "hardware-support"]
 
 [dependencies]
 anyhow = "1"
-btleplug = "0.11"
+btleplug = "0.12"
 dotenvy = "0.15"
 serde-env = "0.3"
 rumqttc = { version = "0.25", default-features = false }
